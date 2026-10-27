@@ -1,0 +1,16 @@
+# 构建产物
+/target
+
+# 无头测试的像素基线（体积大且可重建，见 README「界面校对」一节）
+/tests/snapshots/
+
+# 资源生成的中间产物保留说明：
+# assets/app.res 是源、assets/app.obj 是 build.rs 的链接输入（免 SDK 构建），
+# 两者都需要版本化；重新生成流程见 assets/make_res.py 头注释。
+
+# 图标预览渲染图（非构建必需）
+/assets/icon_preview.png
+
+# 系统杂项
+Thumbs.db
+.DS_Store

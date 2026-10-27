@@ -1,0 +1,38 @@
+[package]
+name = "xunsou"
+version = "1.0.0"
+edition = "2021"
+description = "迅搜 - 全盘极速文件搜索（Rust 重制版）"
+
+[dependencies]
+eframe = "0.30"
+egui = "0.30"
+egui_extras = "0.30"
+rayon = "1.10"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "webp"] }
+open = "5"
+rfd = "0.14"
+winreg = "0.52"
+dirs = "5"
+windows-sys = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_Security",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Shell",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Com",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+[dev-dependencies]
+egui_kittest = { version = "0.30.0", features = ["snapshot", "wgpu"] }

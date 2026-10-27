@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>迅搜 · UI 重构高保真原型</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F1115; --surface:#16191F; --surface-2:#1B1F26; --raised:#22272F;
+  --border:#262B33; --border-2:#343B45; --hover:#1B1F26;
+  --text:#E7EAF0; --text-2:#9DA6B4; --text-3:#7A8494;
+  --brand:#3B9EFF; --brand-soft:rgba(59,158,255,.12); --brand-text:#7FC0FF;
+  --ok:#3DD68C; --warn:#F5A524; --bad:#FF6B6B;
+  --shadow:0 8px 24px rgba(0,0,0,.32);
+  --page:#08090B; --page-line:#1A1D22;
+  --ui:"Microsoft YaHei UI","PingFang SC","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Cascadia Mono",Consolas,"SF Mono",ui-monospace,monospace;
+}
+html[data-theme=light]{
+  --bg:#FFFFFF; --surface:#F7F8FA; --surface-2:#F1F3F6; --raised:#FFFFFF;
+  --border:#E3E6EB; --border-2:#CBD2DA; --hover:#F1F3F6;
+  --text:#111827; --text-2:#4B5563; --text-3:#6B7280;
+  --brand:#0B6BCB; --brand-soft:rgba(11,107,203,.08); --brand-text:#0B6BCB;
+  --ok:#17803D; --warn:#B45309; --bad:#C81E1E;
+  --shadow:0 6px 20px rgba(15,23,42,.12);
+  --page:#EEF1F5; --page-line:#DDE2E9;
+}
+body{background:var(--page);color:var(--text);font-family:var(--ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1400px;margin:0 auto;padding:28px 24px 64px}
+.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:14px;height:14px}
+.ic.xs{width:12px;height:12px;stroke-width:1.8}
+
+/* ---------- 页面外壳 ---------- */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px;flex-wrap:wrap}
+.head h1{font-size:19px;font-weight:600;letter-spacing:.01em}
+.head p{font-size:12.5px;color:var(--text-3);margin-top:6px;line-height:1.6;max-width:620px}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;padding:2px;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:7px}
+.seg button{border:0;background:none;color:var(--text-2);font-family:var(--ui);font-size:12px;padding:5px 11px;border-radius:5px;cursor:pointer}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--brand-soft);color:var(--brand-text);font-weight:600}
+.stage{margin-bottom:14px}
+.win-wrap{overflow:hidden;border-radius:10px;position:relative}
+.note{font-size:11.5px;color:var(--text-3);display:flex;gap:14px;flex-wrap:wrap}
+.note b{color:var(--text-2);font-weight:500}
+
+/* ---------- 应用窗口 ---------- */
+.win{position:absolute;top:0;left:0;width:1280px;height:760px;background:var(--bg);border:1px solid var(--page-line);border-radius:10px;overflow:hidden;
+  display:flex;flex-direction:column;font-size:13px;color:var(--text);transform-origin:top left;
+  box-shadow:0 24px 60px rgba(0,0,0,.35)}
+html[data-theme=light] .win{box-shadow:0 18px 44px rgba(15,23,42,.14)}
+.tbar{height:32px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11.5px;color:var(--text-3)}
+.tbar .tname{margin-left:2px}
+.tbar .wctl{margin-left:auto;display:flex;gap:2px;color:var(--text-3)}
+.tbar .wctl span{width:26px;height:22px;display:grid;place-items:center;border-radius:4px}
+.tbar .wctl span:hover{background:var(--hover);color:var(--text)}
+
+.topbar{height:64px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;border-bottom:1px solid var(--border)}
+.logo{width:26px;height:26px;flex:none;border-radius:7px;background:var(--brand);color:#fff;display:grid;place-items:center}
+.logo .ic{width:15px;height:15px;stroke-width:1.7}
+.search{flex:1;min-width:0;height:38px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--surface);
+  border:1px solid var(--border-2);border-radius:6px;color:var(--text-3)}
+.search.focus{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand-soft)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font-size:13px;font-family:var(--ui)}
+.search input::placeholder{color:var(--text-3)}
+.kbd{display:inline-flex;align-items:center;height:17px;padding:0 5px;border:1px solid var(--border-2);border-radius:4px;
+  font-family:var(--mono);font-size:10.5px;color:var(--text-3);white-space:nowrap}
+.clr{width:18px;height:18px;display:grid;place-items:center;border-radius:4px;cursor:pointer}
+.clr:hover{background:var(--hover);color:var(--text)}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--text-3);white-space:nowrap;padding-right:2px}
+.meta em{color:var(--text-2);font-style:normal}
+.icobtn{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:6px;color:var(--text-2);cursor:pointer;border:1px solid transparent}
+.icobtn:hover{background:var(--hover);color:var(--text)}
+.icobtn.on{color:var(--brand);background:var(--brand-soft);border-color:transparent}
+
+.body{flex:1;display:flex;min-height:0}
+
+/* ---------- 侧栏 ---------- */
+.side{width:208px;flex:none;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:8px 8px 10px;overflow:hidden}
+.sec{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--text-3);padding:9px 8px 6px;display:flex;align-items:center;justify-content:space-between}
+.nav{display:flex;align-items:center;gap:9px;height:32px;padding:0 8px;border-radius:6px;color:var(--text-2);cursor:pointer;position:relative;font-size:13px;user-select:none}
+.nav:hover{background:var(--hover);color:var(--text)}
+.nav.on{background:var(--brand-soft);color:var(--text);font-weight:600}
+.nav.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;border-radius:2px;background:var(--brand)}
+.nav .cnt{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--text-3);font-weight:400}
+.nav.on .cnt{color:var(--brand-text)}
+.div{height:1px;background:var(--border);margin:8px 4px}
+.marks{display:flex;flex-wrap:wrap;gap:6px;padding:2px 8px 4px}
+.mk{width:18px;height:18px;border-radius:50%;cursor:pointer;position:relative;border:2px solid transparent}
+.mk:hover{transform:scale(1.12)}
+.mk.on{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px currentColor}
+.mklink{display:flex;justify-content:space-between;padding:4px 8px 2px;font-size:11.5px;color:var(--text-3)}
+.mklink span:last-child{cursor:pointer}
+.mklink span:last-child:hover{color:var(--text)}
+.vol{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:6px;color:var(--text-2);font-size:12.5px;cursor:pointer}
+.vol:hover{background:var(--hover)}
+.vol .cap{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--text-3)}
+.vol .bx{width:14px;height:14px;border-radius:3px;border:1px solid var(--border-2);display:grid;place-items:center;color:#fff}
+.vol.on .bx{background:var(--brand);border-color:var(--brand)}
+.side-foot{margin-top:auto;display:flex;align-items:center;gap:4px;padding-top:8px;border-top:1px solid var(--border)}
+.side-foot .sp{margin-left:auto}
+.hintbox{margin:2px 8px 6px;padding:8px;border-radius:6px;background:var(--brand-soft);font-size:11px;line-height:1.55;color:var(--text-2)}
+.hintbox b{color:var(--brand-text);font-weight:600}
+
+/* ---------- 主区 ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+.chips{display:none;align-items:center;gap:6px;height:44px;padding:0 12px;border-bottom:1px solid var(--border);overflow-x:auto}
+.chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--border-2);font-size:12.5px;color:var(--text-2);white-space:nowrap;cursor:pointer}
+.chip.on{background:var(--brand-soft);color:var(--brand-text);border-color:var(--brand);font-weight:600}
+.grid{display:grid;grid-template-columns:32px minmax(220px,2fr) minmax(150px,1.8fr) 88px 132px 28px;align-items:center}
+.thead{height:32px;flex:none;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-2)}
+.th{display:flex;align-items:center;gap:4px;height:100%;padding:0 8px;cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden}
+.th:hover{color:var(--text)}
+.th .arw{opacity:.45}
+.th.on{color:var(--text)}
+.th.on .arw{opacity:1;color:var(--brand)}
+.th.r{justify-content:flex-end}
+.rows{flex:1;overflow-y:auto;overflow-x:hidden}
+.row{height:32px;border-bottom:1px solid transparent;cursor:default;position:relative}
+.row:hover{background:var(--hover)}
+.row.on{background:var(--brand-soft)}
+.row.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--brand)}
+.cell{padding:0 8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell.cb{display:grid;place-items:center;padding:0}
+.cb{width:15px;height:15px;border-radius:3px;border:1px solid var(--text-3);display:grid;place-items:center;color:#fff;opacity:.4;flex:none}
+.cb.on{background:var(--brand);border-color:var(--brand);opacity:1}
+.cb .ic{opacity:0}
+.cb.on .ic{opacity:1}
+.row:hover .cb{opacity:1}
+.cell.name{display:flex;align-items:center;gap:8px}
+.cell.name .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell.name .sub{display:none;color:var(--text-2);font-size:11.5px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+.row.on .cell.name .nm{font-weight:600}
+.cell.path{color:var(--text-2);font-size:12px}
+.cell.size,.cell.time{font-family:var(--mono);font-size:12px;color:var(--text-2);text-align:right}
+.cell.mark{display:grid;place-items:center;padding:0}
+.mdot{width:8px;height:8px;border-radius:50%}
+.mempty{width:8px;height:8px;border-radius:50%;border:1px solid var(--border-2);opacity:0}
+.row:hover .mempty{opacity:1}
+.acts{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;gap:1px;padding:2px;
+  background:var(--raised);border:1px solid var(--border-2);border-radius:6px;opacity:0;pointer-events:none;
+  transition:opacity .12s ease-out;box-shadow:var(--shadow);z-index:3}
+.row:hover .acts,.row.on:hover .acts{opacity:1;pointer-events:auto}
+.acts .a{width:24px;height:24px;display:grid;place-items:center;border-radius:4px;color:var(--text-2);cursor:pointer}
+.acts .a:hover{background:var(--hover);color:var(--text)}
+.acts .a.brand:hover{color:var(--brand)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:40px 20px;text-align:center}
+.empty .bigic{width:44px;height:44px;color:var(--text-3);opacity:.55;margin-bottom:6px}
+.empty h3{font-size:16px;font-weight:600;color:var(--text);letter-spacing:.01em}
+.empty p{font-size:12.5px;color:var(--text-3);line-height:1.7;max-width:340px}
+.exchips{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:var(--ui);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--hover)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+.btn.pri:hover{filter:brightness(1.08)}
+
+/* ---------- 预览 ---------- */
+.prev{width:320px;flex:none;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.prev-h{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;border-bottom:1px solid var(--border)}
+.prev-h .tt{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.prev-b{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.thumb{width:100%;aspect-ratio:3/2;border-radius:6px;border:1px solid var(--border);overflow:hidden;position:relative
+  ;background:
+   radial-gradient(circle at 66% 40%, #FFE0A3 0 5%, rgba(255,214,140,.75) 8%, rgba(255,170,110,0) 26%),
+   radial-gradient(120% 60% at 20% 100%, #1B1030 0 55%, rgba(27,16,48,0) 56%),
+   linear-gradient(180deg,#241A46 0%,#4E2C63 26%,#9A4F6E 48%,#D97C5F 62%,#F0A45E 70%,#3A2140 72%,#150E24 100%)}
+.thumb .hill{position:absolute;left:0;right:0;bottom:0;height:34%;background:linear-gradient(180deg,rgba(12,8,20,.35),#0C0814 60%)}
+.thumb .cap{position:absolute;left:8px;bottom:6px;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.62)}
+.tprev{border:1px solid var(--border);border-radius:6px;background:var(--bg);padding:8px 0;font-family:var(--mono);font-size:11.5px;line-height:18px;overflow:hidden}
+.tprev div{display:flex;gap:10px;padding:0 10px;white-space:pre;color:var(--text-2)}
+.tprev div .ln{width:16px;flex:none;text-align:right;color:var(--text-3);opacity:.6}
+.tprev div.h{color:var(--text)}
+.noimg{width:100%;aspect-ratio:3/2;border-radius:6px;border:1px dashed var(--border-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-3);font-size:12px}
+.noimg .ic{width:26px;height:26px;opacity:.6}
+.info{display:flex;flex-direction:column;gap:7px}
+.irow{display:flex;gap:10px;font-size:12px;align-items:baseline}
+.irow .k{width:52px;flex:none;color:var(--text-3);font-size:11.5px}
+.irow .v{flex:1;color:var(--text-2);overflow:hidden;text-overflow:ellipsis}
+.irow .v.mono{font-family:var(--mono);font-size:11.5px}
+.prev-sec{font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between}
+.mrow{display:flex;gap:6px;align-items:center;padding-top:2px}
+.mrow .mk{width:20px;height:20px}
+.mrow .rm{margin-left:auto;font-size:11.5px;color:var(--text-3);cursor:pointer}
+.mrow .rm:hover{color:var(--text)}
+
+/* ---------- 状态栏 ---------- */
+.status{height:26px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--surface);border-top:1px solid var(--border);font-size:11.5px;color:var(--text-3)}
+.st-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);flex:none;box-shadow:0 0 0 3px rgba(61,214,140,.14)}
+.prog{width:88px;height:3px;border-radius:2px;background:var(--border);overflow:hidden;flex:none}
+.prog i{display:block;height:100%;width:62%;background:var(--brand)}
+.badge{display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 7px;border-radius:4px;background:rgba(245,165,36,.14);color:var(--warn);font-size:11px;cursor:pointer;border:1px solid rgba(245,165,36,.28)}
+.status .sp{margin-left:auto}
+.sep{width:1px;height:10px;background:var(--border-2);margin:0 4px}
+
+/* ---------- Toast ---------- */
+.toast{position:absolute;left:50%;bottom:44px;transform:translate(-50%,8px);display:flex;align-items:center;gap:8px;
+  height:36px;padding:0 14px;border-radius:8px;background:var(--raised);border:1px solid var(--border-2);
+  box-shadow:var(--shadow);font-size:12.5px;color:var(--text);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:20}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast .ic{color:var(--ok)}
+
+/* ---------- 设计令牌区 ---------- */
+.tokens{margin-top:44px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card h2{font-size:12px;font-weight:600;color:var(--text-3);letter-spacing:.06em;margin-bottom:12px}
+.sw{display:flex;flex-wrap:wrap;gap:8px}
+.sw i{width:34px;height:34px;border-radius:6px;display:block;border:1px solid rgba(0,0,0,.18)}
+.ty{display:flex;flex-direction:column;gap:9px}
+.ty div{display:flex;align-items:baseline;gap:10px;color:var(--text)}
+.ty div span{font-size:10.5px;color:var(--text-3);font-family:var(--mono);width:74px;flex:none}
+.demo{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.annot{font-size:11px;color:var(--text-3);line-height:1.65;margin-top:10px}
+
+/* ---------- 响应式档位 ---------- */
+.win.w1024 .side{width:56px;padding-left:6px;padding-right:6px}
+.win.w1024 .side .sec,.win.w1024 .side .nav .cnt,.win.w1024 .side .nav .lbl,
+.win.w1024 .side .marks,.win.w1024 .side .mklink,.win.w1024 .side .vol .cap,.win.w1024 .side .vol .lbl,
+.win.w1024 .side .hintbox,.win.w1024 .side .div{display:none}
+.win.w1024 .side .nav{justify-content:center;padding:0}
+.win.w1024 .side-foot{flex-direction:column;align-items:center;gap:6px}
+.win.w1024 .side-foot .sp{margin-left:0}
+.win.w1024 .side .vol{justify-content:center;padding:0}
+.win.w1024 .side .bx{display:none}
+.win.w1024 .prev{width:288px}
+.win.w1024 .icobtn[data-onlywide]{display:none}
+
+.win.w760 .side{display:none}
+.win.w760 .prev{display:none}
+.win.w760 .chips{display:flex}
+.win.w760 .grid{grid-template-columns:28px 1fr 92px}
+.win.w760 .cell.path,.win.w760 .cell.time,.win.w760 .cell.mark{display:none}
+.win.w760 .thead>.th:nth-child(3),.win.w760 .thead>.th:nth-child(5),.win.w760 .thead>.th:nth-child(6){display:none}
+.win.w760 .row{height:44px}
+.win.w760 .cell.name{flex-wrap:wrap;row-gap:0}
+.win.w760 .cell.name .sub{display:block}
+.win.w760 .meta{display:none}
+.win.w760 .kbd{display:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9.2 1.6 3.4 9.1h3.4l-.7 5.3 6.3-8h-3.4l.2-4.8Z"/></symbol>
+<symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.4"/><path d="M10.4 10.4 14 14"/></symbol>
+<symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 5.2c0-.8.6-1.4 1.4-1.4h2.4l1.3 1.5h5.5c.8 0 1.4.6 1.4 1.4v5.1c0 .8-.6 1.4-1.4 1.4H3.4c-.8 0-1.4-.6-1.4-1.4V5.2Z"/></symbol>
+<symbol id="i-image" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.6"/><circle cx="5.9" cy="6.3" r="1.1"/><path d="M2.6 11.6 6 8.2l2.4 2.4 1.9-1.9 3.1 3.1"/></symbol>
+<symbol id="i-doc" viewBox="0 0 16 16"><path d="M9.2 1.8H4.6c-.8 0-1.4.6-1.4 1.4v9.6c0 .8.6 1.4 1.4 1.4h6.8c.8 0 1.4-.6 1.4-1.4V5.4L9.2 1.8Z"/><path d="M9.2 1.8v3.6h3.6"/></symbol>
+<symbol id="i-video" viewBox="0 0 16 16"><rect x="1.8" y="4" width="9.2" height="8" rx="1.6"/><path d="M11 7.6 14.2 6v4l-3.2-1.6"/></symbol>
+<symbol id="i-audio" viewBox="0 0 16 16"><path d="M6.2 11.6V4.4l6-1.2v7.2"/><circle cx="4.6" cy="11.8" r="1.6"/><circle cx="10.6" cy="10.6" r="1.6"/></symbol>
+<symbol id="i-phone" viewBox="0 0 16 16"><rect x="4.4" y="1.8" width="7.2" height="12.4" rx="1.6"/><path d="M6.9 11.9h2.2"/></symbol>
+<symbol id="i-tag" viewBox="0 0 16 16"><path d="M2.4 2.4h5l6.2 6.2-5 5-6.2-6.2v-5Z"/><circle cx="5.6" cy="5.6" r=".9"/></symbol>
+<symbol id="i-settings" viewBox="0 0 16 16"><path d="M2.4 5h11.2M2.4 11h11.2"/><circle cx="6" cy="5" r="1.7"/><circle cx="10.4" cy="11" r="1.7"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13.6 7.4a5.6 5.6 0 1 1-1.7-3.7"/><path d="M13.6 2.4v3.2h-3.2"/></symbol>
+<symbol id="i-close" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+<symbol id="i-chev" viewBox="0 0 16 16"><path d="M4.6 6.4 8 9.8l3.4-3.4"/></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M3.4 8.4l3 3 6.2-6.6"/></symbol>
+<symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.4" y="5.4" width="8" height="8" rx="1.2"/><path d="M10.4 5.4V3.8c0-.7-.5-1.2-1.2-1.2H3.8c-.7 0-1.2.5-1.2 1.2v5.4c0 .7.5 1.2 1.2 1.2h1.6"/></symbol>
+<symbol id="i-external" viewBox="0 0 16 16"><path d="M9.4 2.6h4v4M13.4 2.6 7.6 8.4"/><path d="M11.2 9.4v2.4c0 .8-.6 1.4-1.4 1.4H3.6c-.8 0-1.4-.6-1.4-1.4V5.6c0-.8.6-1.4 1.4-1.4H6"/></symbol>
+<symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.8 13 3.5v4.2c0 3.1-2.1 5.1-5 6-2.9-.9-5-2.9-5-6V3.5L8 1.8Z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.6"/><path d="M8 1.4v1.6M8 13v1.6M1.4 8H3M13 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1"/></symbol>
+<symbol id="i-moon" viewBox="0 0 16 16"><path d="M12.8 9.8A5.3 5.3 0 0 1 6.2 3.2 5.4 5.4 0 1 0 12.8 9.8Z"/></symbol>
+<symbol id="i-grid" viewBox="0 0 16 16"><path d="M2.6 4.6h10.8M2.6 8h10.8M2.6 11.4h10.8"/></symbol>
+<symbol id="i-panel" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M10 3v10"/></symbol>
+<symbol id="i-disk" viewBox="0 0 16 16"><rect x="2.2" y="3" width="11.6" height="10" rx="2"/><path d="M2.2 9.4h11.6"/><circle cx="11.6" cy="11.2" r=".7"/></symbol>
+<symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.4" cy="8" r=".9"/><circle cx="8" cy="8" r=".9"/><circle cx="12.6" cy="8" r=".9"/></symbol>
+</defs></svg>
+
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>迅搜 · UI 重构高保真原型</h1>
+      <p>三栏检索工作台：208px 折叠侧栏 + 结果表 + 320px 检视面板。所有数值取自 <code style="font-family:var(--mono);font-size:11.5px">docs/ui-redesign.md</code> 的设计令牌，可交互：切分类、点表头排序、选中行看预览、点行尾图标看反馈。</p>
+    </div>
+    <div class="tools">
+      <div class="seg" id="themeSeg">
+        <button data-theme="dark" class="on">深色</button>
+        <button data-theme="light">浅色</button>
+      </div>
+      <div class="seg" id="sizeSeg">
+        <button data-w="1280" class="on">1280 窗口</button>
+        <button data-w="1024">1024 折叠</button>
+        <button data-w="760">760 窄屏</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="win-wrap" id="winWrap">
+      <div class="win" id="win">
+        <div class="tbar">
+          <span class="logo" style="width:14px;height:14px;border-radius:3px"><svg class="ic" style="width:9px;height:9px"><use href="#i-bolt"/></svg></span>
+          <span class="tname">迅搜 · 全盘极速文件搜索</span>
+          <span class="wctl"><span>–</span><span>□</span><span>×</span></span>
+        </div>
+
+        <div class="topbar">
+          <span class="logo"><svg class="ic"><use href="#i-bolt"/></svg></span>
+          <div class="search focus">
+            <svg class="ic sm" style="color:var(--text-3)"><use href="#i-search"/></svg>
+            <input id="q" value="" placeholder="搜索文件与文件夹，空格分隔多个关键词">
+            <span class="clr" id="clr" style="display:none"><svg class="ic xs"><use href="#i-close"/></svg></span>
+            <span class="kbd">Alt + `</span>
+          </div>
+          <span class="meta" id="meta">1,204 条 · 38 ms</span>
+          <span class="icobtn" title="行高密度：标准"><svg class="ic"><use href="#i-grid"/></svg></span>
+          <span class="icobtn on" title="预览面板"><svg class="ic"><use href="#i-panel"/></svg></span>
+          <span class="icobtn" title="设置  Ctrl+,"><svg class="ic"><use href="#i-settings"/></svg></span>
+        </div>
+
+        <div class="body">
+          <!-- 侧栏 -->
+          <aside class="side">
+            <div class="sec">分类</div>
+            <div id="navList"></div>
+            <div class="div"></div>
+            <div class="sec">标记</div>
+            <div class="marks" id="mkList"></div>
+            <div class="mklink"><span>已标记 12 项</span><span>清除</span></div>
+            <div class="div"></div>
+            <div class="sec">索引范围</div>
+            <div class="vol on"><span class="bx"><svg class="ic" style="width:9px;height:9px;stroke-width:2.4"><use href="#i-check"/></svg></span><svg class="ic sm" style="color:var(--text-3)"><use href="#i-disk"/></svg><span class="lbl">C: 系统</span><span class="cap">842K</span></div>
+            <div class="vol on"><span class="bx"><svg class="ic" style="width:9px;height:9px;stroke-width:2.4"><use href="#i-check"/></svg></span><svg class="ic sm" style="color:var(--text-3)"><use href="#i-disk"/></svg><span class="lbl">D: 数据</span><span class="cap">442K</span></div>
+            <div class="hintbox">按 <b>Alt + `</b> 随时唤出，输入即搜。索引已启用 <b>MFT 直读</b>。</div>
+            <div class="side-foot">
+              <span class="icobtn" title="切换主题" id="themeBtn"><svg class="ic"><use href="#i-moon"/></svg></span>
+              <span class="icobtn" title="设置"><svg class="ic"><use href="#i-settings"/></svg></span>
+              <span class="icobtn sp" title="重建索引"><svg class="ic"><use href="#i-refresh"/></svg></span>
+            </div>
+          </aside>
+
+          <!-- 主区 -->
+          <div class="main">
+            <div class="chips" id="chips"></div>
+            <div class="thead grid">
+              <div class="th" style="justify-content:center"><span class="cb" id="allcb"><svg class="ic" style="width:9px;height:9px;stroke-width:2.6"><use href="#i-check"/></svg></span></div>
+              <div class="th on" data-sort="name">名称<svg class="ic xs arw"><use href="#i-chev"/></svg></div>
+              <div class="th" data-sort="path">路径<svg class="ic xs arw"><use href="#i-chev"/></svg></div>
+              <div class="th r" data-sort="size">大小<svg class="ic xs arw"><use href="#i-chev"/></svg></div>
+              <div class="th r" data-sort="time">修改时间<svg class="ic xs arw"><use href="#i-chev"/></svg></div>
+              <div class="th" style="justify-content:center;padding:0"><svg class="ic xs" style="color:var(--text-3)"><use href="#i-tag"/></svg></div>
+            </div>
+            <div class="rows" id="rows"></div>
+          </div>
+
+          <!-- 预览 -->
+          <aside class="prev" id="prev">
+            <div class="prev-h">
+              <span id="phIcon" style="color:#10B981"><svg class="ic"><use href="#i-image"/></svg></span>
+              <span class="tt" id="phName">sunset_2026.jpg</span>
+              <span class="icobtn" style="width:24px;height:24px"><svg class="ic"><use href="#i-more"/></svg></span>
+              <span class="icobtn" style="width:24px;height:24px"><svg class="ic"><use href="#i-close"/></svg></span>
+            </div>
+            <div class="prev-b" id="prevBody"></div>
+          </aside>
+        </div>
+
+        <div class="status">
+          <span class="st-dot"></span>
+          <span>就绪</span>
+          <span class="sep"></span>
+          <span>MFT 索引 · 1,284,331 项</span>
+          <span class="badge" title="以管理员身份重启，可获得 MFT 直读的秒级索引"><svg class="ic" style="width:11px;height:11px"><use href="#i-shield"/></svg>启用极速索引</span>
+          <span class="sp"></span>
+          <span>上次索引 0.9 s</span>
+          <span class="sep"></span>
+          <span>v1.0.0 (Rust)</span>
+        </div>
+
+        <div class="toast" id="toast"><svg class="ic"><use href="#i-check"/></svg><span>已复制路径</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <span><b>当前档位</b> <span id="bpLabel">XL · ≥1180 · 侧栏展开 + 预览常驻</span></span>
+    <span><b>行高</b> 32px</span>
+    <span><b>强调色</b> 仅用于选中/焦点/主行动</span>
+    <span><b>可点击目标</b> ≥ 24×24</span>
+  </div>
+
+  <section class="tokens">
+    <div class="card">
+      <h2>色彩 · 表面与文字</h2>
+      <div class="sw">
+        <i style="background:#0F1115" title="bg.base #0F1115"></i>
+        <i style="background:#16191F" title="bg.surface #16191F"></i>
+        <i style="background:#1B1F26" title="bg.hover #1B1F26"></i>
+        <i style="background:#22272F" title="bg.raised #22272F"></i>
+        <i style="background:#262B33" title="border #262B33"></i>
+        <i style="background:#E7EAF0" title="text.primary #E7EAF0"></i>
+        <i style="background:#9DA6B4" title="text.secondary #9DA6B4"></i>
+        <i style="background:#7A8494" title="text.tertiary #7A8494"></i>
+        <i style="background:#3B9EFF" title="brand #3B9EFF"></i>
+      </div>
+      <p class="annot">表面色阶四档足够表达层级；文字三级均 ≥ 4.5:1 对比度。品牌色只出现在选中条、焦点环、主按钮。</p>
+    </div>
+    <div class="card">
+      <h2>色彩 · 语义与分类</h2>
+      <div class="sw">
+        <i style="background:#3DD68C" title="ok #3DD68C"></i>
+        <i style="background:#F5A524" title="warn #F5A524"></i>
+        <i style="background:#FF6B6B" title="danger #FF6B6B"></i>
+        <i style="background:#10B981" title="图片 #10B981"></i>
+        <i style="background:#3B82F6" title="文档 #3B82F6"></i>
+        <i style="background:#F43F5E" title="视频 #F43F5E"></i>
+        <i style="background:#A855F7" title="音频 #A855F7"></i>
+        <i style="background:#F59E0B" title="手机 #F59E0B"></i>
+        <i style="background:#64748B" title="目录 #64748B"></i>
+      </div>
+      <p class="annot">分类色统一 Tailwind 500 亮度带，仅用于 16px 图标着色，不做色块背景。</p>
+    </div>
+    <div class="card">
+      <h2>字号阶梯</h2>
+      <div class="ty">
+        <div><span>16 / 600</span><b style="font-size:16px">空态标题</b></div>
+        <div><span>13 / 400</span>文件名、按钮、输入框正文</div>
+        <div><span>12 / 600</span><b style="font-size:12px">表头与分区标题</b></div>
+        <div><span>12 mono</span><span style="font-family:var(--mono);color:var(--text-2)">D:\工作\2026 · 2.4 MB</span></div>
+        <div><span>11 / 500</span><span style="font-size:11px;color:var(--text-3)">计数、kbd、版本号</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>组件</h2>
+      <div class="demo" style="margin-bottom:14px">
+        <button class="btn pri">建立索引</button>
+        <button class="btn">取消</button>
+        <span class="chip on">图片</span><span class="chip">文档</span>
+        <span class="kbd">Ctrl + C</span>
+      </div>
+      <div class="demo">
+        <span class="ckb" style="width:15px;height:15px;border-radius:3px;background:#3B9EFF;display:grid;place-items:center;color:#fff"><svg class="ic" style="width:9px;height:9px;stroke-width:2.6"><use href="#i-check"/></svg></span>
+        <span class="cb"></span>
+        <span style="color:var(--text-2);font-size:12px">复选框默认 45% 不透明，悬浮/选中转实</span>
+      </div>
+      <div class="toast show" style="position:static;transform:none;margin-top:14px;display:inline-flex"><svg class="ic"><use href="#i-check"/></svg><span>已标记 3 项</span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const CATS = [
+  {k:'all',  l:'全部', ic:'i-grid',   c:'var(--brand)',   n:'1.28M'},
+  {k:'img',  l:'图片', ic:'i-image',  c:'#10B981',        n:'84.1K'},
+  {k:'doc',  l:'文档', ic:'i-doc',    c:'#3B82F6',        n:'213.9K'},
+  {k:'vid',  l:'视频', ic:'i-video',  c:'#F43F5E',        n:'12.5K'},
+  {k:'aud',  l:'音频', ic:'i-audio',  c:'#A855F7',        n:'9.3K'},
+  {k:'phone',l:'手机', ic:'i-phone',  c:'#F59E0B',        n:'1.2K'},
+  {k:'dir',  l:'目录', ic:'i-folder', c:'#64748B',        n:'96.4K'}
+];
+const MARKS = ['#EF4444','#F97316','#F59E0B','#22C55E','#14B8A6','#3B82F6','#8B5CF6','#64748B'];
+
+const ROWS = [
+  {n:'季度经营分析_Q4.pptx', p:'D:\\工作\\2026\\第四季度', s:24500000, t:'今天 14:32', c:'doc', m:0},
+  {n:'sunset_2026.jpg', p:'C:\\Users\\Lenovo\\Pictures\\旅行\\青岛', s:1887436, t:'今天 09:12', c:'img', m:null},
+  {n:'产品需求文档_v3.2.docx', p:'D:\\工作\\2026\\产品\\迅搜', s:892400, t:'今天 11:05', c:'doc', m:3},
+  {n:'屏幕录制_20261026.mp4', p:'C:\\Users\\Lenovo\\Videos\\Captures', s:1843200000, t:'昨天 22:41', c:'vid', m:null},
+  {n:'架构评审会议录音.m4a', p:'D:\\工作\\会议\\2026-10', s:6410000, t:'昨天 15:20', c:'aud', m:5},
+  {n:'xunsou-1.0.0.apk', p:'D:\\发布\\Android', s:18342000, t:'昨天 10:02', c:'phone', m:null},
+  {n:'src', p:'D:\\工作\\2026\\产品\\迅搜', s:0, t:'今天 14:02', c:'dir', m:null},
+  {n:'索引性能测试数据.csv', p:'D:\\工作\\2026\\产品\\迅搜\\bench', s:3145728, t:'10月26日 18:44', c:'doc', m:4},
+  {n:'IMG_2841.HEIC', p:'C:\\Users\\Lenovo\\Pictures\\Camera Roll', s:4718592, t:'10月26日 08:31', c:'img', m:null},
+  {n:'客户合同_签字版.pdf', p:'D:\\工作\\合同\\2026', s:2411724, t:'10月25日 16:09', c:'doc', m:0},
+  {n:'培训视频_第一讲.mkv', p:'D:\\资料\\培训\\新人', s:2415919104, t:'10月25日 09:15', c:'vid', m:null},
+  {n:'README.md', p:'D:\\工作\\2026\\产品\\迅搜', s:2748, t:'今天 01:57', c:'doc', m:null},
+  {n:'背景音乐_lo-fi.mp3', p:'C:\\Users\\Lenovo\\Music\\Work', s:7340032, t:'10月24日 21:30', c:'aud', m:null},
+  {n:'node_modules', p:'D:\\工作\\2026\\web\\dashboard', s:0, t:'10月24日 12:00', c:'dir', m:null},
+  {n:'logo_dark@2x.png', p:'D:\\工作\\2026\\品牌\\素材', s:184320, t:'10月23日 17:22', c:'img', m:2},
+  {n:'销售明细_2025.xlsx', p:'D:\\工作\\财务\\报表\\2025', s:12582912, t:'10月22日 10:48', c:'doc', m:null},
+  {n:'会议纪要_1021.txt', p:'D:\\工作\\会议\\2026-10', s:4096, t:'10月21日 19:03', c:'doc', m:null},
+  {n:'tailwind.config.js', p:'D:\\工作\\2026\\web\\dashboard', s:1843, t:'10月20日 14:37', c:'doc', m:null},
+  {n:'产品演示_竖版.mov', p:'D:\\工作\\2026\\市场\\视频', s:734003200, t:'10月19日 11:26', c:'vid', m:null},
+  {n:'timg.jpg', p:'C:\\Users\\Lenovo\\AppData\\Local\\Temp', s:98432, t:'10月18日 08:12', c:'img', m:null},
+  {n:'windows.iso', p:'D:\\资料\\系统镜像', s:5905580032, t:'10月17日 20:55', c:'other', m:null},
+  {n:'个人简历_2026.pdf', p:'C:\\Users\\Lenovo\\Documents', s:412600, t:'10月16日 13:40', c:'doc', m:6}
+];
+
+const $ = s => document.querySelector(s);
+const fmt = b => {
+  if (b === 0) return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' KB';
+  if (b < 1073741824) return (b/1048576).toFixed(1) + ' MB';
+  return (b/1073741824).toFixed(2) + ' GB';
+};
+const iconOf = c => c==='img'?'i-image':c==='vid'?'i-video':c==='aud'?'i-audio':c==='phone'?'i-phone':c==='dir'?'i-folder':c==='other'?'i-external':'i-doc';
+const colorOf = c => c==='img'?'#10B981':c==='vid'?'#F43F5E':c==='aud'?'#A855F7':c==='phone'?'#F59E0B':c==='dir'?'#64748B':c==='other'?'#94A3B8':'#3B82F6';
+
+let state = {cat:'all', sort:'name', desc:false, sel:1, rows:ROWS.slice()};
+
+function renderNav(){
+  $('#navList').innerHTML = CATS.map(c=>{
+    const on = state.cat === c.k ? ' on' : '';
+    return `<div class="nav${on}" data-cat="${c.k}">
+      <svg class="ic" style="color:${on?c.c:'currentColor'}"><use href="#${c.ic}"/></svg>
+      <span class="lbl">${c.l}</span><span class="cnt">${c.n}</span></div>`;
+  }).join('');
+  $('#chips').innerHTML = CATS.map(c=>`<span class="chip${state.cat===c.k?' on':''}" data-cat="${c.k}"><svg class="ic xs"><use href="#${c.ic}"/></svg>${c.l}</span>`).join('');
+}
+function renderMarks(){
+  $('#mkList').innerHTML = MARKS.map(c=>`<span class="mk" style="background:${c};color:${c}" title="只看此标记"></span>`).join('');
+}
+function sortRowsOn(list){
+  const k = state.sort;
+  list.sort((a,b)=>{
+    let r;
+    if (k==='size') r = a.s - b.s;
+    else if (k==='time') r = a.t.localeCompare(b.t);
+    else if (k==='path') r = a.p.localeCompare(b.p,'zh');
+    else r = a.n.localeCompare(b.n,'zh');
+    return state.desc ? -r : r;
+  });
+}
+function paintRows(list){
+  state.rows = list;
+  $('#rows').innerHTML = list.map((r,i)=>{
+    const on = state.sel === i ? ' on' : '';
+    const mark = r.m != null
+      ? `<span class="mdot" style="background:${MARKS[r.m]}"></span>`
+      : `<span class="mempty"></span>`;
+    return `<div class="row grid${on}" data-i="${i}">
+      <div class="cell cb"><span class="cb${r.m===3?' on':''}"><svg class="ic" style="width:9px;height:9px;stroke-width:2.6"><use href="#i-check"/></svg></span></div>
+      <div class="cell name">
+        <svg class="ic" style="color:${colorOf(r.c)}"><use href="#${iconOf(r.c)}"/></svg>
+        <span class="nm">${r.n}</span>
+        <span class="sub">${r.p} · ${fmt(r.s)} · ${r.t}</span>
+      </div>
+      <div class="cell path">${r.p}</div>
+      <div class="cell size">${fmt(r.s)}</div>
+      <div class="cell time">${r.t}</div>
+      <div class="cell mark">${mark}</div>
+      <div class="acts">
+        <span class="a" title="打开  Enter"><svg class="ic sm"><use href="#i-external"/></svg></span>
+        <span class="a" title="打开所在位置  Ctrl+Enter"><svg class="ic sm"><use href="#i-folder"/></svg></span>
+        <span class="a" data-copy="1" title="复制路径  Ctrl+C"><svg class="ic sm"><use href="#i-copy"/></svg></span>
+        <span class="a brand" title="标记  Alt+M"><svg class="ic sm"><use href="#i-tag"/></svg></span>
+      </div>
+    </div>`;
+  }).join('');
+  $('#meta').innerHTML = `<em>${list.length}</em> 条 · ${list.length ? 38 : 12} ms`;
+}
+function renderRows(){
+  const list = ROWS.filter(r => state.cat==='all' || r.c===state.cat);
+  sortRowsOn(list);
+  if (state.sel >= list.length) state.sel = 0;
+  paintRows(list);
+}
+function renderPreview(){
+  const r = state.rows[state.sel] || state.rows[0];
+  if (!r) return;
+  $('#phName').textContent = r.n;
+  $('#phIcon').style.color = colorOf(r.c);
+  $('#phIcon').innerHTML = `<svg class="ic"><use href="#${iconOf(r.c)}"/></svg>`;
+  let media;
+  if (r.c === 'img') {
+    media = `<div class="thumb"><div class="hill"></div><div class="cap">${r.n} · 1478 × 986</div></div>`;
+  } else if (r.c === 'doc') {
+    media = `<div class="tprev">
+      <div class="h"><span class="ln">1</span># 迅搜 · 索引架构说明</div>
+      <div><span class="ln">2</span></div>
+      <div class="h"><span class="ln">3</span>## 1. MFT 直读</div>
+      <div><span class="ln">4</span>管理员模式下直接读取 NTFS $MFT，</div>
+      <div><span class="ln">5</span>百万级条目在秒级完成索引。</div>
+      <div><span class="ln">6</span></div>
+      <div class="h"><span class="ln">7</span>## 2. USN 增量</div>
+      <div><span class="ln">8</span>监听 USN 日志，新建 / 重命名 / 删除</div>
+      <div><span class="ln">9</span>实时同步到内存索引，无需重建。</div>
+      <div><span class="ln">10</span></div>
+      <div><span class="ln">11</span>&gt; 快照 + 增量回放，冷启动 0.8s 就绪。</div>
+    </div>`;
+  } else if (r.c === 'vid') {
+    media = `<div class="thumb" style="background:radial-gradient(circle at 50% 50%, rgba(244,63,94,.28), transparent 62%), linear-gradient(160deg,#1A1226,#120C1B)"><div style="position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.75)"><svg class="ic" style="width:34px;height:34px"><use href="#i-video"/></svg></div><div class="cap">1920 × 1080 · 24 fps</div></div>`;
+  } else {
+    media = `<div class="noimg"><svg class="ic"><use href="#${iconOf(r.c)}"/></svg><span>此类型暂无内置预览</span></div>`;
+  }
+  $('#prevBody').innerHTML = `
+    ${media}
+    <div class="info">
+      <div class="irow"><span class="k">大小</span><span class="v mono">${fmt(r.s)}</span></div>
+      <div class="irow"><span class="k">修改</span><span class="v mono">2026/10/24 14:32:08</span></div>
+      <div class="irow"><span class="k">路径</span><span class="v mono" style="line-height:1.5">${r.p}\\${r.n}</span></div>
+    </div>
+    <div class="div" style="margin:2px 0"></div>
+    <div class="prev-sec">标记<span style="font-weight:400;letter-spacing:0">alt + m</span></div>
+    <div class="mrow">${MARKS.map((c,i)=>`<span class="mk" style="width:20px;height:20px;background:${c};color:${c}${r.m===i?';box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px '+c:''}"></span>`).join('')}<span class="rm">移除</span></div>
+  `;
+}
+let tid;
+function toast(msg){
+  const t = $('#toast');
+  t.querySelector('span').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(tid);
+  tid = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function applyWidth(w){
+  document.querySelectorAll('#sizeSeg button').forEach(x=>x.classList.toggle('on', x.dataset.w === String(w)));
+  const win = $('#win');
+  win.classList.remove('w1024','w760');
+  win.style.width = w + 'px';
+  if (String(w) === '1024') { win.classList.add('w1024'); $('#bpLabel').textContent = 'L · 980–1179 · 侧栏折叠为图标，预览 288'; }
+  else if (String(w) === '760') { win.classList.add('w760'); $('#bpLabel').textContent = 'S · 680–819 · 侧栏隐藏、分类转顶部 chips、路径下沉为副行'; }
+  else { $('#bpLabel').textContent = 'XL · ≥1180 · 侧栏展开 + 预览常驻'; }
+  requestAnimationFrame(fit);
+}
+function bind(){
+  document.querySelectorAll('#navList .nav, #chips .chip').forEach(el=>{
+    el.onclick = () => { state.cat = el.dataset.cat; state.sel = 0; renderNav(); renderRows(); renderPreview(); bind(); };
+  });
+  document.querySelectorAll('.th[data-sort]').forEach(el=>{
+    el.onclick = () => {
+      const k = el.dataset.sort;
+      if (state.sort === k) state.desc = !state.desc; else { state.sort = k; state.desc = false; }
+      document.querySelectorAll('.th').forEach(t=>{
+        t.classList.remove('on');
+        const a = t.querySelector('.arw');
+        if (a) a.style.transform = '';
+      });
+      el.classList.add('on');
+      const arw = el.querySelector('.arw');
+      if (arw) arw.style.transform = state.desc ? 'rotate(180deg)' : '';
+      state.sel = 0; renderRows(); renderPreview(); bind();
+    };
+  });
+  document.querySelectorAll('.row').forEach(el=>{
+    el.onclick = e => {
+      if (e.target.closest('[data-copy]')) { toast('已复制路径'); return; }
+      if (e.target.closest('.cb')) { e.target.closest('.cb').classList.toggle('on'); return; }
+      state.sel = +el.dataset.i;
+      document.querySelectorAll('.row').forEach(r=>r.classList.remove('on'));
+      el.classList.add('on');
+      renderPreview();
+    };
+  });
+  const q = $('#q');
+  const emptyHtml = v => `<div class="empty">
+        <svg class="ic bigic"><use href="#i-search"/></svg>
+        <h3>没有找到「${v}」</h3>
+        <p>试试用空格分隔多个关键词，或用 <b>\\</b> 指定路径片段，例如 <span style="font-family:var(--mono)">D:\\工作\\2026</span></p>
+        <div class="exchips"><span class="chip">jpg 2026</span><span class="chip">.pdf 合同</span><span class="chip">D:\\项目</span></div>
+        <div style="margin-top:14px"><button class="btn">清除筛选</button></div>
+      </div>`;
+  q.oninput = () => {
+    const v = q.value.trim();
+    $('#clr').style.display = v ? 'grid' : 'none';
+    if (!v) { renderRows(); renderPreview(); bindRowsOnly(); return; }
+    const hit = ROWS.filter(r => (r.n + ' ' + r.p).toLowerCase().includes(v.toLowerCase()));
+    state.sel = 0;
+    if (!hit.length) {
+      state.rows = [];
+      $('#rows').innerHTML = emptyHtml(v);
+      $('#meta').innerHTML = `<em>0</em> 条 · 12 ms`;
+      return;
+    }
+    sortRowsOn(hit);
+    paintRows(hit);
+    renderPreview();
+    bindRowsOnly();
+  };
+  $('#clr').onclick = () => { q.value=''; q.dispatchEvent(new Event('input')); };
+  $('#allcb').onclick = () => {
+    const on = $('#allcb').classList.toggle('on');
+    document.querySelectorAll('.row .cb').forEach(c=>c.classList.toggle('on', on));
+  };
+  $('#themeBtn').onclick = () => {
+    const cur = document.documentElement.dataset.theme;
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    document.querySelectorAll('#themeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.theme===next));
+    $('#themeBtn').innerHTML = `<svg class="ic"><use href="#${next==='dark'?'i-moon':'i-sun'}"/></svg>`;
+  };
+  document.querySelectorAll('#themeSeg button').forEach(b=>{
+    b.onclick = () => {
+      document.documentElement.dataset.theme = b.dataset.theme;
+      document.querySelectorAll('#themeSeg button').forEach(x=>x.classList.toggle('on', x===b));
+    };
+  });
+  document.querySelectorAll('#sizeSeg button').forEach(b=>{
+    b.onclick = () => applyWidth(b.dataset.w);
+  });
+}
+function bindRowsOnly(){
+  document.querySelectorAll('.row').forEach(el=>{
+    el.onclick = e => {
+      if (e.target.closest('[data-copy]')) { toast('已复制路径'); return; }
+      if (e.target.closest('.cb')) { e.target.closest('.cb').classList.toggle('on'); return; }
+      state.sel = +el.dataset.i;
+      document.querySelectorAll('.row').forEach(r=>r.classList.remove('on'));
+      el.classList.add('on');
+      renderPreview();
+    };
+  });
+}
+
+const WIN_H = 760; // 与 .win 的 height 保持一致
+function fit(){
+  const win = $('#win'), wrap = $('#winWrap');
+  const w = parseInt(win.style.width || '1280', 10);
+  const s = Math.min(1, (wrap.clientWidth) / w);
+  win.style.transform = `scale(${s})`;
+  wrap.style.height = (WIN_H * s) + 'px';
+}
+window.addEventListener('resize', fit);
+
+renderNav(); renderMarks(); renderRows(); renderPreview(); bind(); bindRowsOnly();
+const hashW = (location.hash.match(/w(\d+)/) || [])[1];
+if (hashW) applyWidth(hashW);
+if (location.hash.includes('light')) {
+  document.documentElement.dataset.theme = 'light';
+  document.querySelectorAll('#themeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.theme==='light'));
+  $('#themeBtn').innerHTML = '<svg class="ic"><use href="#i-sun"/></svg>';
+}
+requestAnimationFrame(fit);
+setTimeout(fit, 120);
+</script>
+</body>
+</html>
